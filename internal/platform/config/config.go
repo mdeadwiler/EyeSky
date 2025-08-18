@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-export type Config struct {
+type Config struct {
+	Environment string
 	Server  ServerConfig
 	Database DatabaseConfig
 	OpenSky OpenSkyConfig
@@ -49,11 +50,13 @@ type LoggingConfig struct {
 	Format string // "json"
 }
 
-func New(*Config, error) {
+func New()(*Config, error) {
 	env := getEnv("ENVIRONMENT", "development")
 
-	cfg := &Cnfig{
+
+	cfg := &Config{
 		Environment: env,
+
 
 		Server: ServerConfig{
 			Port: getPortForEnvironment(env),
@@ -67,17 +70,39 @@ func New(*Config, error) {
 		},
 
 		Database: DatabaseConfig{
-			Host: getEnv("DB_Host", "localhost"),
-			Port: getEnv("DB_Port", "5432"),
-			User: getEnv("DB_User", "postgres"),
-			Password: getEnv("DB_Password", ""),
-			DBName: getEnv("DB_Name", "eyesky"),
+			Host: getEnv("DB_HOST", "localhost"),
+			Port: getEnv("DB_PORT", "5432"),
+			User: getEnv("DB_USER", "postgres"),
+			Password: getEnv("DB_PASSWORD", ""),
+			DBName: getEnv("DB_NAME", "eyesky"),
 			SSLMode: getEnv("DB_SSL_MODE", "disable"),
 			MaxOpenConns: getEnvAsInt("DB_MAX_OPEN_CONNS", 20),
 			MaxIdleConns: getEnvAsInt("DB_MAX_IDLE_CONNS", 510),
 			MaxLifetime: getEnvAsDuration("DB_MAX_LIFETIME", 5*time.Minute),
 		},
-		
-
+		OpenSky: OpenSkyConfig{
+			BaseURL: "https://opensky-network.org/api",
+			Username: getEnv("OPEN_SKY_USERNAME", ""),
+			Password: getEnv("OPEN_SKY_PASSWORD", ""),
+			Timeout: getEnvAsDuration("OPEN_SKY_TIMEOUT", 30*time.Second),
+			RateLimit: getEnvAsInt("OPEN_SKY_RATE_LIMIT", 100),
+		},
+		Logging: LoggingConfig{
+			Level: getEnv("LOG_LEVEL", "info"),
+			Format: getEnv("LOG_FORMAT", "json"),
+		},
 	}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
+
+func getPortForEnvironment(env string) string {
+	if env == "production" {
+		return getEnv("PORT", "443")
+	}
+	return getEnv("PORT", "8080")
+}
+
+
