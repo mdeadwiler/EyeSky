@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-type config struct {
+export type Config struct {
 	Server  ServerConfig
-	Dartabase DatabaseConfig
+	Database DatabaseConfig
 	OpenSky OpenSkyConfig
 	Logging LoggingConfig
 }
@@ -17,7 +17,7 @@ type ServerConfig struct {
 	Port  string
 	ReadTimeout time.Duration
 	WriteTimeout time.Duration
-	IdleTimeOut time.Duration
+	IdleTimeout time.Duration
 	ShutdownTimeout time.Duration
 }
 
@@ -34,8 +34,8 @@ type DatabaseConfig struct {
 }
 
 type OpenSkyConfig struct {
-	BaseUrl string
-	User string
+	BaseURL string
+	Username string
 	Password string
 	Timeout time.Duration
 	RateLimit int // This will be request per minute
