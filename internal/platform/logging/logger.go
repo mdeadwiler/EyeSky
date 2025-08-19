@@ -72,12 +72,11 @@ func (l *Logger) ErrorWithFields(msg string, fields map[string]interface{}) {
 	event.Msg(msg)
 }
 // logs flight information
-func ( l *Logger) WithRequestID(requestID string) *Logger {
+func (l *Logger) WithRequestID(requestID string) *Logger {
 	newLogger := l.logger.With().Str("request_id", requestID).Logger()
 		return &Logger{logger: newLogger}
 }
-
-func ( l *Logger) WithFlightID(flightID string) *Logger {
+func (l *Logger) WithFlightID(flightID string) *Logger {
 	newLogger := l.logger.With().Str("flight_id", flightID).Logger()
 		return &Logger{logger: newLogger}
 }
