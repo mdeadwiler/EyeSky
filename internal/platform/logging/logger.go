@@ -8,17 +8,15 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/EyeSky/internal/platform/config"
+	"github.com/mdeadwioer/EyeSky/internal/platform/config"
 )
 
-
-type LoggingConfig struct {
-	Level string
-	Format string
+type Logger struct {
+	logger zerolog.Logger
 }
 
 
-func New() (cfg config.LoggingConfig) *Logger {
+func New(cfg config.LoggingConfig) *Logger {
  // output writer
  var output io.Writer = os.Stdout
 
@@ -35,8 +33,8 @@ func New() (cfg config.LoggingConfig) *Logger {
  // Logger
  zl := zerolog.New(output).
  Level(level).
- Output(output).
  With().
  Timestamp().
  Logger()
+ return &Logger{logger:zl}
 }
