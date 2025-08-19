@@ -6,9 +6,8 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
-	"github.com/mdeadwioer/EyeSky/internal/platform/config"
+	"github.com/mdeadwiler/EyeSky/internal/platform/config"
 )
 
 type Logger struct {
@@ -38,3 +37,20 @@ func New(cfg config.LoggingConfig) *Logger {
  Logger()
  return &Logger{logger:zl}
 }
+
+func (l *Logger) Debug(msg string) {
+	l.logger.Debug().Msg(msg)
+ }
+
+func (l *Logger) Info(msg string) {
+	l.logger.Info().Msg(msg)
+}
+
+func (l *Logger) Warn(msg string) {
+	l.logger.Warn().Msg(msg)
+}
+
+func (l *Logger) Error(msg string) {
+	l.logger.Error().Msg(msg)
+}
+
