@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/mdeadwiler/EyeSky/internal/platform/config"
+	"github.com/EyeSky/internal/platform/config"
 )
 
 
@@ -31,4 +31,12 @@ func New() (cfg config.LoggingConfig) *Logger {
  if err != nil {
 	level = zerolog.InfoLevel // This is fallback info
  }
+
+ // Logger
+ zl := zerolog.New(output).
+ Level(level).
+ Output(output).
+ With().
+ Timestamp().
+ Logger()
 }
