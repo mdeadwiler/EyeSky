@@ -1,7 +1,9 @@
 package config
 
 import (
+	"errors"
 	"os"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -77,11 +79,11 @@ func New()(*Config, error) {
 			DBName: getEnv("DB_NAME", "eyesky"),
 			SSLMode: getEnv("DB_SSL_MODE", "disable"),
 			MaxOpenConns: getEnvAsInt("DB_MAX_OPEN_CONNS", 20),
-			MaxIdleConns: getEnvAsInt("DB_MAX_IDLE_CONNS", 510),
+			MaxIdleConns: getEnvAsInt("DB_MAX_IDLE_CONNS", 10),
 			MaxLifetime: getEnvAsDuration("DB_MAX_LIFETIME", 5*time.Minute),
 		},
 		OpenSky: OpenSkyConfig{
-			BaseURL: "https://opensky-network.org/api",
+			BaseURL: getEnv("OPENSKY_BASE_URL", "https://opensky-network.org/api"),
 			Username: getEnv("OPEN_SKY_USERNAME", ""),
 			Password: getEnv("OPEN_SKY_PASSWORD", ""),
 			Timeout: getEnvAsDuration("OPEN_SKY_TIMEOUT", 30*time.Second),
@@ -104,5 +106,69 @@ func getPortForEnvironment(env string) string {
 	}
 	return getEnv("PORT", "8080")
 }
+
+// Helper functions
+func getEnv(key, defaultVal string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultVal
+}
+
+func getEnvAsInt(name string, defaultVal int) int {
+	valStr := getEnv(name, "")
+	if val, err := strconv.Atoi(valStr); err == nil {
+		return val
+	}
+	return defaultVal
+}
+
+func getEnvAsDuration(name string, defaultVal time.Duration) time.Duration {
+	valStr := getEnv(name, "")
+	if val, err := time.ParseDuration(valStr); err == nil {
+		return val
+	}
+	return defaultVal
+}
+
+// Validate checks required configuration fields
+func (c *Config) Validate() error {
+	// production
+	if c.Environment == "production" {
+		if c.Database.Password == "" {
+			return errors.New("DB_PASSWORD required in production")
+		}
+		if c.OpenSky.Username == "" {
+			return errors.New("OPENSKY_USERNAME required in production")
+		}
+		if c.OpenSky.Password == "" {
+			return errors.New("OPENSKY_PASSWORD required in production")
+		}
+	}
+	
+	// connection limits
+	if c.Database.MaxOpenConns > 100 {
+		return errors.New("DB_MAX_OPEN_CONNS too high, maximum 100")
+	}
+	if c.Database.MaxIdleConns > c.Database.MaxOpenConns {
+		return errors.New("DB_MAX_IDLE_CONNS cannot exceed DB_MAX_OPEN_CONNS")
+	}
+	
+	// Valid log levels
+	validLevels := []string{"debug", "info", "warn", "error"}
+	if !slices.Contains(validLevels, c.Logging.Level) {
+		return errors.New("invalid LOG_LEVEL, must be: debug, info, warn, or error")
+	}
+	
+	// Valid log formats
+	validFormats := []string{"json", "console"}
+	if !slices.Contains(validFormats, c.Logging.Format) {
+		return errors.New("invalid LOG_FORMAT, must be: json or console")
+	}
+	
+	return nil
+}
+
+
 
 
