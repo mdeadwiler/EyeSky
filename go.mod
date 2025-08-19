@@ -1,4 +1,4 @@
-module github.com/mdeaadwiler/EyeSky
+module github.com/mdeadwiler/EyeSky
 
 go 1.25.0
 
