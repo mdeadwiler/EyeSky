@@ -44,3 +44,23 @@ type Flight struct {
 	LastSeen *time.Time `json:"last_seen"`
 }
 
+func (f *Flight) IsValid() bool {
+	// Mandotory for tracking flight
+	if f.ICAO24 == "" {
+		return false
+	}
+	// Correct format
+	if !f.IsValidICAO24() {
+		return false
+	}
+	// Fresh data
+	if f.LastContact.IsZero() {
+		return false
+	}
+	// Position Data
+	if !f.HasPosition() {
+		return false
+	}
+	return true
+
+}

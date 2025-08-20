@@ -81,4 +81,3 @@ func (l *Logger) WithFlightID(flightID string) *Logger {
 		return &Logger{logger: newLogger}
 }
 
-
