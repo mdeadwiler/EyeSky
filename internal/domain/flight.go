@@ -4,6 +4,15 @@ import (
 	"time"
 )
 
+
+// Emergency squawk codes 
+const (
+	SquawkEmergency = "7700"
+	SquawkRadioFailure = "7600"
+	SquawkHijack = "7500"
+	SquawkVFR = "1200"
+)
+
 // Aircract Identification
 type Flight struct {
 	ICAO24 string `json:"icao24"` // Transponder address
@@ -27,7 +36,7 @@ type Flight struct {
 	OnGround bool `json:"on_ground"`
 	Alert bool `json:"alert"`
 	SPI bool `json:"spi"` // Special Purpose Indicator 
-	SquakCode *string `json:"squak"` // Transponder code
+	SquawkCode *string `json:"squak"` // Transponder code
 
 	// Temporal Data
 	TimePosition *time.Time `json:"time_position"` // Last position update
