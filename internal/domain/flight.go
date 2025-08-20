@@ -36,7 +36,7 @@ type Flight struct {
 	OnGround bool `json:"on_ground"`
 	Alert bool `json:"alert"`
 	SPI bool `json:"spi"` // Special Purpose Indicator 
-	SquawkCode *string `json:"squak"` // Transponder code
+	SquawkCode *string `json:"squawk"` // Transponder code
 
 	// Temporal Data
 	TimePosition *time.Time `json:"time_position"` // Last position update
@@ -45,7 +45,7 @@ type Flight struct {
 }
 
 func (f *Flight) IsValid() bool {
-	// Mandotory for tracking flight
+	// Mandatory for tracking flight
 	if f.ICAO24 == "" {
 		return false
 	}
@@ -71,10 +71,17 @@ func (f *Flight) IsValidICAO24() bool {
 	}
 	for _, char := range f.ICAO24 {
 		if !((char >= '0' && char <= '9') ||
-		     (char >= 'A' && char <= 'F') ||
-		      (char >= 'a' && char <= 'f')) {
+		    (char >= 'A' && char <= 'F') ||
+		    (char >= 'a' && char <= 'f')) {
 				return false
-			  }
+			}
 	}
 	return true
+}
+
+// Valid coordinate data
+func (f *Flight) HasPosition() bool {
+	return f.Latitude != nil && f.Longitude != nil &&
+		   *f.Latitude >= -90 && *f.Latitude <= 90 &&
+		   *f.Longitude >= -180 && *f.Longitude <= 180
 }
