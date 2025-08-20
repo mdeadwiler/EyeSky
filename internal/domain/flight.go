@@ -26,7 +26,12 @@ type Flight struct {
 	// Aircraft State 
 	OnGround bool `json:"on_ground"`
 	Alert bool `json:"alert"`
-	SPI bool `json:"spi"`
-	SquakCode *string `json:"squak"`
+	SPI bool `json:"spi"` // Special Purpose Indicator 
+	SquakCode *string `json:"squak"` // Transponder code
+
+	// Temporal Data
+	TimePosition *time.Time `json:"time_position"` // Last position update
+	LastContact time.Time `json:"last_contact"`
+	LastSeen *time.Time `json:"last_seen"`
 }
 
