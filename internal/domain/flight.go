@@ -19,8 +19,14 @@ type Flight struct {
 	GeometricAltitude *float64 `json:"geometric_altitude"`
 
 	// Movement Data
-Velocity *float64 `json:"velocity"`
-Heading *float64 `json:"heading"`
-VerticalRate *float64 `json:"vertical_rate"`
+	Velocity *float64 `json:"velocity"`
+	Heading *float64 `json:"heading"`
+	VerticalRate *float64 `json:"vertical_rate"`
+
+	// Aircraft State 
+	OnGround bool `json:"on_ground"`
+	Alert bool `json:"alert"`
+	SPI bool `json:"spi"`
+	SquakCode *string `json:"squak"`
 }
 
