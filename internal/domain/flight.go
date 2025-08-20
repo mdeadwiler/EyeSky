@@ -64,3 +64,17 @@ func (f *Flight) IsValid() bool {
 	return true
 
 }
+// Validates ICAO24 transponder address
+func (f *Flight) IsValidICAO24() bool {
+	if len(f.ICAO24) != 6 {
+		return false
+	}
+	for _, char := range f.ICAO24 {
+		if !((char >= '0' && char <= '9') ||
+		     (char >= 'A' && char <= 'F') ||
+		      (char >= 'a' && char <= 'f')) {
+				return false
+			  }
+	}
+	return true
+}
