@@ -114,3 +114,18 @@ func (f *Flight) GetEmergencyType() string {
 		return ""
 	}
 }
+
+// Last contact
+func (f *Flight) Age() time.Duration {
+	return time.Since(f.LastContact)
+}
+
+// This will show as stale meaning too old after a certain amount of time which would be unreliable for live data
+func (f *Flight) IsStale()bool {
+	return f.Age() > 30*time.Second
+}
+
+// Reloable data for tracking
+func (f *Flight) IsTracked() bool {
+	return f.IsValid() && !f.IsStale() && (f.Velocity != nil || f.BarometricAltitude != nil)
+}
