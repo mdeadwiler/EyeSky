@@ -96,3 +96,21 @@ func (f *Flight) IsEmergency() bool {
 			*f.SquawkCode == SquawkRadioFailure ||
 			*f.SquawkCode == SquawkHijack
 }
+
+// This returns an emergency type if the emergency is reported
+func (f *Flight) GetEmergencyType() string {
+	if f.SquawkCode == nil {
+		return ""
+	}
+
+	switch *f.SquawkCode {
+	case SquawkEmergency:
+		return "General Emergency"
+	case SquawkRadioFailure:
+		return "Radio Failure"
+	case SquawkHijack:
+		return "Hijack"
+	default:
+		return ""
+	}
+}
