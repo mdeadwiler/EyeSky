@@ -13,7 +13,7 @@ const (
 	SquawkVFR = "1200"
 )
 
-// Aircract Identification
+// Aircraft Identification
 type Flight struct {
 	ICAO24 string `json:"icao24"` // Transponder address
 	Callsign *string `json:"callsign"` // This can be null for flight 
@@ -84,4 +84,15 @@ func (f *Flight) HasPosition() bool {
 	return f.Latitude != nil && f.Longitude != nil &&
 		   *f.Latitude >= -90 && *f.Latitude <= 90 &&
 		   *f.Longitude >= -180 && *f.Longitude <= 180
+}
+
+
+// Emergency checks if aircraft is broadcasting emergency squak 
+func (f *Flight) IsEmergency() bool {
+	if f.SquawkCode == nil {
+		return false 
+	}
+	return *f.SquawkCode == SquawkEmergency ||
+			*f.SquawkCode == SquawkRadioFailure ||
+			*f.SquawkCode == SquawkHijack
 }
