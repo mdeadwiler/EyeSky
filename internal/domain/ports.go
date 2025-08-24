@@ -29,3 +29,17 @@ type FlightRepository interface {
 	Count(ctx context.Context) (int, error)
 
 }
+
+type OpenSkyClient interface {
+	// Get all aircraft states globally
+	GetAllStates(ctx context.Context) ([]*Flight, error)
+
+	//Get states in region
+	GetStatesInRegion(ctx context.Context, bounds GeoBounds) ([]*Flight, error)
+
+	//Get states by ICAO24..Specific aircraft
+	GetStatesByICAO24(ctx context.Context, icao24s []string) ([]*Flight, error)
+
+	//Health check for API
+	HealthCheck(ctx context.Context) error 
+}
