@@ -10,8 +10,17 @@ import (
 type GeoBounds struct {
 	NorthLat float64 `json:"north_lat"`
 	SouthLat float64 `json:"south_lat"`
-	WestLong float64 `json:"west_lon"`
-	EastLong float64 `json:"east_lon"`
+	WestLon float64 `json:"west_lon"`
+	EastLon float64 `json:"east_lon"`
+}
+
+type FlightStats struct {
+	TotalFlights int `json:"total_flights"`
+	ActiveFlights int `json:"active_flights"`
+	OnGroundFlights int `json:"on_ground_flights"`
+	AirborneFlights int `json:"airborne_flights"`
+	EmergencyFlights int `json:"emergency_flights"`
+	LastUpdated time.Time `json:"last_updated"`
 }
 
 // Data for flight repository
@@ -42,4 +51,19 @@ type OpenSkyClient interface {
 
 	//Health check for API
 	HealthCheck(ctx context.Context) error 
+}
+// Business logic for flight service...flight tracking 
+type FlightService interface {
+// Fetch and store flight data
+FetchAndStoreFlights(ctx context.Context) error
+FetchAndStoreFlightsInRegion(ctx context.Context, bounds GeoBounds) error
+
+//Query operations with business logic
+GetActiveFlights(ctx context.Context, limit int) ([]*Flight, error)
+GetEmergencyFlights(ctx context.Context) ([]*Flight, error)
+GetFlightsInRegion(ctx context.Context, bounds GeoBounds) ([]*Flight, error)
+
+//Data management 
+CleanUpStaleData(ctx context.Context) (int, error)
+GetFlightStatistics(ctx context.Context) (*FlightStats, error)
 }
