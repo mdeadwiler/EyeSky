@@ -1,3 +1,6 @@
 package domain
 
-// Ports and interfaces placeholder
+import (
+	"context"
+	"time"
+)
