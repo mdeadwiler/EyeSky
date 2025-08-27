@@ -35,3 +35,19 @@ func NewClient(cfg config.OpenSkyConfig) *Client {
 		rateLimit: cfg.RateLimit,
 	}
 }
+
+func (c *Client) GetAllStates(ctx context.Context) ([] *domain.Flight, error) {
+	// Request URL
+	reqURL := fmt.Sprintf("%s/states/all" , c.baseURL)
+
+	// HTTP request with context
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	//OAuth
+	if c.username != "" && c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
+}
