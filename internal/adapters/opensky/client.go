@@ -62,16 +62,14 @@ func (c *Client) GetAllStates(ctx context.Context) ([] *domain.Flight, error) {
 	}
 	// Parse JSON response
 	var apiResponse StateVectorResponse
-	if err := json.NewDecoder(resp.Body).Decode(&apiResponse);
-	err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	// Convert to domain flights
 	flights := make([]*domain.Flight, 0, len(apiResponse.States))
 	for _, state := range apiResponse.States {
-		if flight, err := c.parseStateVector(state);
-		err == nil {
+		if flight, err := c.parseStateVector(state); err == nil {
 			flights = append(flights, flight)
 		}
 	}
@@ -83,4 +81,13 @@ func (c *Client) parseStateVector(state []interface{}) (*domain.Flight, error) {
 	if len(state) < 17 {
 		return nil, fmt.Errorf("invalid state vector: expected 17 fields, got %d", len(state))
 	}
+	// ICAO24. This is required for transponder data
+	icao24, ok := state[ICAO24Index].(string)
+	if !ok || icao24 == "" {
+		return nil, fmt.Errorf("invalid or missing ICAO24")
+	}
+	flight := &domain.Flight{
+		ICAO24: icao24,
+	}
+	return flight, nil
 }
