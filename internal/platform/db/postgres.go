@@ -15,6 +15,12 @@ import (
 	"github.com/mdeadwiler/EyeSky/internal/platform/config"
 )
 
+
+const (
+	defaultConnectionTimeout = 5 * time.Second
+	migrationPath = "internal/platform/db/migrations"
+)
+
 type DB struct {
 	conn *sql.DB
 	config config.DatabaseConfig
@@ -25,9 +31,9 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", 
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode)
 	
-		conn, err := sql.Open("postgres", connStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open database connection: %w", err)
+	conn, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database connection: %w", err)
 		}
 
 	// Configure connection pool for flight data
@@ -37,7 +43,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 
 	// Test Connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-    defer cancel()
+	defer cancel()
 
 	if err := conn.PingContext(ctx); err != nil {
 		conn.Close()
@@ -53,7 +59,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 
 func (db *DB) Migrate() error {
 	// Migration path
-	migrationDir, err := filepath.Abs("internal/platform/db/migrations")
+	migrationDir, err := filepath.Abs(migrationPath)
 	if err != nil {
 		return fmt.Errorf("failed to get migration directory: %w", err)
 	}
