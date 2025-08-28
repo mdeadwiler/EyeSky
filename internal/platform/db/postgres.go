@@ -15,7 +15,7 @@ import (
 	"github.com/mdeadwiler/EyeSky/internal/platform/config"
 )
 
-type db struct {
+type DB struct {
 	conn *sql.DB
 	config config.DatabaseConfig
 }
@@ -30,7 +30,7 @@ func (db *DB) Migrate() error {
 }
 
 // For DB connection repositories
-func (db *db) GetConnection() *sql.DB {
+func (db *DB) GetConnection() *sql.DB {
 	return db.conn
 }
 
