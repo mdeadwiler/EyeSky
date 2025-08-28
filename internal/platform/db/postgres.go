@@ -25,7 +25,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", 
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode)
 	
-		conn, err := sql.Open("postgress", connStr)
+		conn, err := sql.Open("postgres", connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open database connection: %w", err)
 		}
@@ -38,7 +38,6 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 	// Test Connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
-    // defer ctx.Done()
 
 	if err := conn.PingContext(ctx); err != nil {
 		conn.Close()
@@ -53,8 +52,42 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 }
 
 func (db *DB) Migrate() error {
-	// Migration runner
+	// Migration path
+	migrationDir, err := filepath.Abs("internal/platform/db/migrations")
+	if err != nil {
+		return fmt.Errorf("failed to get migration directory: %w", err)
+	}
 
+	// File source for migrations
+	sourceURL := fmt.Sprintf("file://%s", migrationDir)
+	source, err := (&file.File{}).Open(sourceURL)
+	if err != nil {
+		return fmt.Errorf("failed to create migration source: %w", err)
+	}
+	defer source.Close()
+
+	// DB driver
+	driver, err := postgres.WithInstance(db.conn, &postgres.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to create database driver: %w", err)
+	}
+
+	// Pass down migration instance
+	m, err := migrate.NewWithInstance("file", source, "postgres", driver)
+	if err != nil {
+		return fmt.Errorf("failed to create migration instance: %w", err)
+	}
+	defer m.Close()
+
+	// Run latest migration
+	if err := m.Up(); err != nil {
+		if err == migrate.ErrNoChange {
+			// No migrations
+			return nil
+		}
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+	return nil
 }
 
 // For DB connection repositories
