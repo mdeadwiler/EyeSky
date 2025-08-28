@@ -102,14 +102,19 @@ func (c *Client) parseStateVector(state []interface{}) (*domain.Flight, error) {
 	if lastContacted, ok := state[LastContactIndex].(float64); ok {
 		flight.LastContact = time.Unix(int64(lastContacted), 0)
 	}
-
+	// Cordinates 
 	if longitude, ok := state[LongitudeIndex].(float64); ok {
 		flight.Longitude = &longitude
 	}
 	if latitude, ok := state[LatitudeIndex].(float64); ok {
 		flight.Latitude = &latitude
 	}
-	return flight, nil
+	// altitude data( convert meters to feet)
+	if baroAlt, ok := state[BaroAltitudeIndex].(float64); ok {
+		altFeet := baroAlt * 3.28084 // converts meeters to feet
+		flight.BarometricAltitude = &altFeet
+	}
+	return flight, nil	
 
 	
 }
