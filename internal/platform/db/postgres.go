@@ -39,6 +39,17 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
     // defer ctx.Done()
+
+	if err := conn.PingContext(ctx); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	db := &DB{
+		conn: conn,
+		config: cfg,
+	}
+	return db, nil	
 }
 
 func (db *DB) Migrate() error {
