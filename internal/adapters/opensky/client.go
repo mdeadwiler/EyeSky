@@ -89,5 +89,28 @@ func (c *Client) parseStateVector(state []interface{}) (*domain.Flight, error) {
 	flight := &domain.Flight{
 		ICAO24: icao24,
 	}
+
+	// Extracting domain items
+	if callsign, ok := state[CallsignIndex].(string); ok && callsign !="" {
+		flight.Callsign = &callsign
+	}
+
+	if country, ok := state[OriginCountryIndex].(string); ok {
+		flight.Country = country
+	}
+
+	if lastContacted, ok := state[LastContactIndex].(float64); ok {
+		flight.LastContact = time.Unix(int64(lastContacted), 0)
+	}
+
+	if longitude, ok := state[LongitudeIndex].(float64); ok {
+		flight.Longitude = &longitude
+	}
+	if latitude, ok := state[LatitudeIndex].(float64); ok {
+		flight.Latitude = &latitude
+	}
 	return flight, nil
+
+	
 }
+ 
