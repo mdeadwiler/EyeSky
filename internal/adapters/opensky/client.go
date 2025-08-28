@@ -115,7 +115,127 @@ func (c *Client) parseStateVector(state []interface{}) (*domain.Flight, error) {
 		flight.BarometricAltitude = &altFeet
 	}
 	return flight, nil	
-
-	
 }
- 
+// Fetches States in region
+func (c *Client) GetStatesInRegion(ctx context.Context, bounds domain.GeoBounds) ([]*domain.Flight, error) {
+	reqURL := fmt.Sprintf("%s/states/all", c.baseURL)
+	params := url.Values{}
+	params.Add("lamin", fmt.Sprintf("%.6f", bounds.SouthLat))
+	params.Add("lamax", fmt.Sprintf("%.6f", bounds.NorthLat))
+	params.Add("lomin", fmt.Sprintf("%.6f", bounds.WestLon))
+	params.Add("lomax", fmt.Sprintf("%.6f", bounds.EastLon))
+
+	reqURL += "?" + params.Encode()
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	
+	// Add Basic Authentication
+	if c.username != "" && c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
+	
+	// Make HTTP request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("OpenSky API returned status %d", resp.StatusCode)
+	}
+	
+	// Parse JSON response
+	var apiResponse StateVectorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	
+	// Convert to domain flights
+	flights := make([]*domain.Flight, 0, len(apiResponse.States))
+	for _, state := range apiResponse.States {
+		if flight, err := c.parseStateVector(state); err == nil {
+			flights = append(flights, flight)
+		}
+	}
+	
+	return flights, nil
+}
+
+// GetStatesByICAO24 fetches states for specific aircraft by their ICAO24 addresses
+func (c *Client) GetStatesByICAO24(ctx context.Context, icao24s []string) ([]*domain.Flight, error) {
+	// Build URL with ICAO24 parameters
+	reqURL := fmt.Sprintf("%s/states/all", c.baseURL)
+	
+	// Add ICAO24 filter parameters
+	params := url.Values{}
+	for _, icao24 := range icao24s {
+		params.Add("icao24", icao24)
+	}
+	
+	reqURL += "?" + params.Encode()
+	
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	
+	// Add Basic Authentication
+	if c.username != "" && c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
+	
+	// Make HTTP request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("OpenSky API returned status %d", resp.StatusCode)
+	}
+	
+	// Parse JSON response
+	var apiResponse StateVectorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	
+	// Convert to domain flights
+	flights := make([]*domain.Flight, 0, len(apiResponse.States))
+	for _, state := range apiResponse.States {
+		if flight, err := c.parseStateVector(state); err == nil {
+			flights = append(flights, flight)
+		}
+	}
+	
+	return flights, nil
+}
+
+// HealthCheck verifies OpenSky API is accessible
+func (c *Client) HealthCheck(ctx context.Context) error {
+	reqURL := fmt.Sprintf("%s/states/all", c.baseURL)
+	
+	req, err := http.NewRequestWithContext(ctx, "HEAD", reqURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create health check request: %w", err)
+	}
+	
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("OpenSky API unreachable: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("OpenSky API unhealthy, status: %d", resp.StatusCode)
+	}
+	
+	return nil
+}
