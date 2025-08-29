@@ -28,17 +28,22 @@ func (r *Repository) Store(ctx context.Context, flight *domain.Flight) error {
 	icao24, callsign, country, longitude, latitude,
 	barometric_altitude, geometric_altitude, velocity, heading, vertical_rate,
 	on_ground, alert, spi, squawk_code,
-	time_position, last_contact, last_seen) VAUES (
+	time_position, last_contact, last_seen) VALUES (
 	$1, $2, $3, $4, $5,
 	$6, $7, $8, $9, $10,
 	$11, $12, $13, $14,
 	$15, $16, $17)`
 
-	err := r.db.ExecContext(ctx, query,
+	_, err := r.db.ExecContext(ctx, query,
 	flight.ICAO24, flight.Callsign, 
 	flight.Country, flight.Longitude, flight.Latitude,
 	flight.BarometricAltitude, flight.GeometricAltitude, 
 	flight.Velocity, flight.Heading, flight.VerticalRate,
 	flight.OnGround, flight.Alert, flight.SPI, 
-	flight.SquawkCode,flight.TimePosition, flight.LastContact, flight.LastSeen)
+	flight.SquawkCode, flight.TimePosition, flight.LastContact, flight.LastSeen,
+)
+if err != nil {
+	return fmt.Errorf("failed to store flight %s: %w", flight.ICAO24, err)
+}
+return nil
 }
