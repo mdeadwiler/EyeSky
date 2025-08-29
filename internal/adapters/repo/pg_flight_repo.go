@@ -20,3 +20,25 @@ func New(database *db.DB) *Repository {
 		db: database.GetConnection(),
 	}
 }
+
+// The $ is to protect and point to the exact param to pull from the query. Think of it like a id. $ protects from SQL injection like obsfuscation
+func (r *Repository) Store(ctx context.Context, flight *domain.Flight) error {
+	query := `
+	INSERT INTO flights (
+	icao24, callsign, country, longitude, latitude,
+	barometric_altitude, geometric_altitude, velocity, heading, vertical_rate,
+	on_ground, alert, spi, squawk_code,
+	time_position, last_contact, last_seen) VAUES (
+	$1, $2, $3, $4, $5,
+	$6, $7, $8, $9, $10,
+	$11, $12, $13, $14,
+	$15, $16, $17)`
+
+	err := r.db.ExecContext(ctx, query,
+	flight.ICAO24, flight.Callsign, 
+	flight.Country, flight.Longitude, flight.Latitude,
+	flight.BarometricAltitude, flight.GeometricAltitude, 
+	flight.Velocity, flight.Heading, flight.VerticalRate,
+	flight.OnGround, flight.Alert, flight.SPI, 
+	flight.SquawkCode,flight.TimePosition, flight.LastContact, flight.LastSeen)
+}
