@@ -54,6 +54,7 @@ func main() {
 		"port":        cfg.Server.Port,
 	})
 
+	logger.Info("EyeSky Gateway Service initialization complete")
 	// TODO: Initialize repositories, services, and HTTP server
-	select {} // Keep the service running
+	// select {} Keep the service running
 }
