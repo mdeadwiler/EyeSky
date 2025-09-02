@@ -60,8 +60,9 @@ CREATE TABLE flights (
 CREATE INDEX idx_flights_icao24 ON flights(icao24);
 CREATE INDEX idx_flights_coordinates ON flights(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 CREATE INDEX idx_flights_squawk_emergency ON flights(squawk_code) WHERE squawk_code IN ('7700', '7600', '7500');
-CREATE INDEX idx_flights_active ON flights(last_contact) WHERE last_contact > NOW() - INTERVAL '5 minutes';
+-- Simple index for active flights (without time predicate)
+CREATE INDEX idx_flights_active ON flights(last_contact);
 
--- Composite index for common domestic queries
+-- Composite index for domestic queries (without time predicate)
 CREATE INDEX idx_flights_domestic_active ON flights(last_contact, latitude, longitude) 
-    WHERE latitude BETWEEN 24 AND 49 AND longitude BETWEEN -125 AND -66 AND last_contact > NOW() - INTERVAL '5 minutes';
+    WHERE latitude BETWEEN 24 AND 49 AND longitude BETWEEN -125 AND -66;

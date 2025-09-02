@@ -11,7 +11,9 @@ import (
 
 func main() {
 	// Load .env file
-	godotenv.Load()
+	if err := godotenv.Load(); err != nil {
+		fmt.Printf("Warning: Failed to load .env file: %v\n", err)
+	}
 
 	// Load configuration
 	cfg, err := config.New()
@@ -19,6 +21,9 @@ func main() {
 		fmt.Printf("Failed to load config: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Debug: Print database config
+	fmt.Printf("DB Config - User: %s, DB: %s, Host: %s\n", cfg.Database.User, cfg.Database.DBName, cfg.Database.Host)
 
 
 	
