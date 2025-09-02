@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/mdeadwiler/EyeSky/internal/domain"
 	"github.com/mdeadwiler/EyeSky/internal/platform/logging"
@@ -74,4 +75,118 @@ func (fs *FlightService) FetchAndStoreFlightsInRegion(ctx context.Context, bound
 	})
 
 	return nil
+}
+func (fs *FlightService) GetActiveFlights(ctx context.Context, limit int) ([]*domain.Flight, error) {
+	flights, err := fs.repo.GetAll(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active flights: %w", err)
+	}
+
+	// Filter for non-stale flights
+	activeFlights := make([]*domain.Flight, 0, len(flights))
+	for _, flight := range flights {
+		if !flight.IsStale() {
+			activeFlights = append(activeFlights, flight)
+		}
+	}
+
+	return activeFlights, nil
+}
+
+func (fs *FlightService) GetEmergencyFlights(ctx context.Context) ([]*domain.Flight, error) {
+	// Get recent flights to check for emergencies
+	flights, err := fs.repo.GetAll(ctx, 10000) // Large limit for emergency scanning
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flights for emergency check: %w", err)
+	}
+
+	// Filter for emergency flights that are not stale
+	emergencyFlights := make([]*domain.Flight, 0)
+	for _, flight := range flights {
+		if flight.IsEmergency() && !flight.IsStale() {
+			emergencyFlights = append(emergencyFlights, flight)
+		}
+	}
+
+	if len(emergencyFlights) > 0 {
+		fs.logger.InfoWithFields("Emergency flights detected", map[string]interface{}{
+			"count": len(emergencyFlights),
+		})
+	}
+
+	return emergencyFlights, nil
+}
+
+func (fs *FlightService) GetFlightsInRegion(ctx context.Context, bounds domain.GeoBounds) ([]*domain.Flight, error) {
+	flights, err := fs.repo.GetInRegion(ctx, bounds, time.Now().Add(-5*time.Minute))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flights in region: %w", err)
+	}
+
+	// Filter for non-stale flights
+	activeRegionalFlights := make([]*domain.Flight, 0, len(flights))
+	for _, flight := range flights {
+		if !flight.IsStale() {
+			activeRegionalFlights = append(activeRegionalFlights, flight)
+		}
+	}
+
+	return activeRegionalFlights, nil
+}
+
+func (fs *FlightService) CleanUpStaleData(ctx context.Context) (int, error) {
+	// Delete flights older than 10 minutes
+	cutoffTime := time.Now().Add(-10 * time.Minute)
+	
+	deletedCount, err := fs.repo.DeleteStale(ctx, cutoffTime)
+	if err != nil {
+		return 0, fmt.Errorf("failed to clean up stale data: %w", err)
+	}
+
+	if deletedCount > 0 {
+		fs.logger.InfoWithFields("Stale data cleaned up", map[string]interface{}{
+			"deleted_count": deletedCount,
+			"cutoff_time":   cutoffTime,
+		})
+	}
+
+	return deletedCount, nil
+}
+
+func (fs *FlightService) GetFlightStatistics(ctx context.Context) (*domain.FlightStats, error) {
+	// Get total count
+	totalCount, err := fs.repo.Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flight count: %w", err)
+	}
+
+	// Get recent flights for analysis
+	recentFlights, err := fs.repo.GetAll(ctx, 10000) // Large limit for stats
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flights for statistics: %w", err)
+	}
+
+	// Calculate statistics
+	stats := &domain.FlightStats{
+		TotalFlights: totalCount,
+		LastUpdated:  time.Now(),
+	}
+
+	for _, flight := range recentFlights {
+		if !flight.IsStale() {
+			stats.ActiveFlights++
+			
+			if flight.OnGround {
+				stats.OnGroundFlights++
+			} else {
+				stats.AirborneFlights++
+			}
+
+			if flight.IsEmergency() {
+				stats.EmergencyFlights++
+			}
+		}
+	}
+
+	return stats, nil
 }
