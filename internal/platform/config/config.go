@@ -74,9 +74,9 @@ func New()(*Config, error) {
 		Database: DatabaseConfig{
 			Host: getEnv("DB_HOST", "localhost"),
 			Port: getEnv("DB_PORT", "5432"),
-			User: getEnv("DB_USER", "postgres"),
+			User: getEnv("DB_USER", ""),
 			Password: getEnv("DB_PASSWORD", ""),
-			DBName: getEnv("DB_NAME", "eyesky"),
+			DBName: getEnv("DB_NAME", ""),
 			SSLMode: getEnv("DB_SSL_MODE", "disable"),
 			MaxOpenConns: getEnvAsInt("DB_MAX_OPEN_CONNS", 20),
 			MaxIdleConns: getEnvAsInt("DB_MAX_IDLE_CONNS", 10),
