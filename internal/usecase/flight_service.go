@@ -47,3 +47,31 @@ func (fs *FlightService) FetchAndStoreFlights(ctx context.Context) error {
 	})
 	return nil
 }
+
+func (fs *FlightService) FetchAndStoreFlightsInRegion(ctx context.Context, bounds domain.GeoBounds) error {
+	// Fetch flights in region from OpenSky API
+	flights, err := fs.openskyClient.GetStatesInRegion(ctx, bounds)
+	if err != nil {
+		return fmt.Errorf("failed to fetch flights in region: %w", err)
+	}
+
+	// Filter valid flights
+	validFlights := make([]*domain.Flight, 0, len(flights))
+	for _, flight := range flights {
+		if flight.IsValid() {
+			validFlights = append(validFlights, flight)
+		}
+	}
+
+	// Store flights in DB
+	if err := fs.repo.StoreBatch(ctx, validFlights); err != nil {
+		return fmt.Errorf("failed to store regional flights: %w", err)
+	}
+
+	fs.logger.InfoWithFields("Regional flights processed", map[string]interface{}{
+		"total": len(flights),
+		"valid": len(validFlights),
+	})
+
+	return nil
+}
