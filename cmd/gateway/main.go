@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"os"
-
+	"github.com/joho/godotenv"
 	"github.com/mdeadwiler/EyeSky/internal/platform/config"
 	"github.com/mdeadwiler/EyeSky/internal/platform/db"
 	"github.com/mdeadwiler/EyeSky/internal/platform/logging"
 )
 
 func main() {
+	// Load .env file
+	godotenv.Load()
+
 	// Load configuration
 	cfg, err := config.New()
 	if err != nil {
@@ -17,6 +20,8 @@ func main() {
 		os.Exit(1)
 	}
 
+
+	
 	// Initialize logger
 	logger := logging.New(cfg.Logging)
 	logger.Info("Starting EyeSky Gateway Service")
