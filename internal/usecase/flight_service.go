@@ -77,33 +77,37 @@ func (fs *FlightService) FetchAndStoreFlightsInRegion(ctx context.Context, bound
 	return nil
 }
 func (fs *FlightService) GetActiveFlights(ctx context.Context, limit int) ([]*domain.Flight, error) {
-	flights, err := fs.repo.GetAll(ctx, limit)
+	// Get only recent flights (last 5 minutes) - database-level filtering
+	since := time.Now().Add(-5 * time.Minute)
+	flights, err := fs.repo.GetInRegion(ctx, domain.GeoBounds{
+		NorthLat: 90, SouthLat: -90, WestLon: -180, EastLon: 180, // Global bounds
+	}, since)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active flights: %w", err)
 	}
 
-	// Filter for non-stale flights
-	activeFlights := make([]*domain.Flight, 0, len(flights))
-	for _, flight := range flights {
-		if !flight.IsStale() {
-			activeFlights = append(activeFlights, flight)
-		}
+	// Apply limit
+	if len(flights) > limit {
+		flights = flights[:limit]
 	}
 
-	return activeFlights, nil
+	return flights, nil
 }
 
 func (fs *FlightService) GetEmergencyFlights(ctx context.Context) ([]*domain.Flight, error) {
-	// Get recent flights to check for emergencies
-	flights, err := fs.repo.GetAll(ctx, 10000) // Large limit for emergency scanning
+	// Get only live flights (last 2 minutes) for emergency detection
+	since := time.Now().Add(-2 * time.Minute)
+	flights, err := fs.repo.GetInRegion(ctx, domain.GeoBounds{
+		NorthLat: 90, SouthLat: -90, WestLon: -180, EastLon: 180,
+	}, since)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get flights for emergency check: %w", err)
 	}
 
-	// Filter for emergency flights that are not stale
+	// Filter for emergency flights only
 	emergencyFlights := make([]*domain.Flight, 0)
 	for _, flight := range flights {
-		if flight.IsEmergency() && !flight.IsStale() {
+		if flight.IsEmergency() {
 			emergencyFlights = append(emergencyFlights, flight)
 		}
 	}
@@ -118,20 +122,14 @@ func (fs *FlightService) GetEmergencyFlights(ctx context.Context) ([]*domain.Fli
 }
 
 func (fs *FlightService) GetFlightsInRegion(ctx context.Context, bounds domain.GeoBounds) ([]*domain.Flight, error) {
-	flights, err := fs.repo.GetInRegion(ctx, bounds, time.Now().Add(-5*time.Minute))
+	// Database already filters by time, no need for additional staleness check
+	since := time.Now().Add(-2 * time.Minute) // Live data only
+	flights, err := fs.repo.GetInRegion(ctx, bounds, since)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get flights in region: %w", err)
 	}
 
-	// Filter for non-stale flights
-	activeRegionalFlights := make([]*domain.Flight, 0, len(flights))
-	for _, flight := range flights {
-		if !flight.IsStale() {
-			activeRegionalFlights = append(activeRegionalFlights, flight)
-		}
-	}
-
-	return activeRegionalFlights, nil
+	return flights, nil
 }
 
 func (fs *FlightService) CleanUpStaleData(ctx context.Context) (int, error) {
@@ -154,37 +152,31 @@ func (fs *FlightService) CleanUpStaleData(ctx context.Context) (int, error) {
 }
 
 func (fs *FlightService) GetFlightStatistics(ctx context.Context) (*domain.FlightStats, error) {
-	// Get total count
-	totalCount, err := fs.repo.Count(ctx)
+	// Get only live flights for accurate statistics
+	since := time.Now().Add(-2 * time.Minute)
+	liveFlights, err := fs.repo.GetInRegion(ctx, domain.GeoBounds{
+		NorthLat: 90, SouthLat: -90, WestLon: -180, EastLon: 180,
+	}, since)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get flight count: %w", err)
+		return nil, fmt.Errorf("failed to get live flights for statistics: %w", err)
 	}
 
-	// Get recent flights for analysis
-	recentFlights, err := fs.repo.GetAll(ctx, 10000) // Large limit for stats
-	if err != nil {
-		return nil, fmt.Errorf("failed to get flights for statistics: %w", err)
-	}
-
-	// Calculate statistics
+	// Calculate real-time statistics
 	stats := &domain.FlightStats{
-		TotalFlights: totalCount,
+		TotalFlights: len(liveFlights), // Live count, not historical
+		ActiveFlights: len(liveFlights),
 		LastUpdated:  time.Now(),
 	}
 
-	for _, flight := range recentFlights {
-		if !flight.IsStale() {
-			stats.ActiveFlights++
-			
-			if flight.OnGround {
-				stats.OnGroundFlights++
-			} else {
-				stats.AirborneFlights++
-			}
+	for _, flight := range liveFlights {
+		if flight.OnGround {
+			stats.OnGroundFlights++
+		} else {
+			stats.AirborneFlights++
+		}
 
-			if flight.IsEmergency() {
-				stats.EmergencyFlights++
-			}
+		if flight.IsEmergency() {
+			stats.EmergencyFlights++
 		}
 	}
 
