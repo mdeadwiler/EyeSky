@@ -78,6 +78,7 @@ func (fs *FlightService) FetchAndStoreFlightsInRegion(ctx context.Context, bound
 }
 func (fs *FlightService) GetActiveFlights(ctx context.Context, limit int) ([]*domain.Flight, error) {
 	// Get only recent flights (last 5 minutes) - database-level filtering
+	// Will change this to a live stream instead of every 5 minutes
 	since := time.Now().Add(-5 * time.Minute)
 	flights, err := fs.repo.GetInRegion(ctx, domain.GeoBounds{
 		NorthLat: 90, SouthLat: -90, WestLon: -180, EastLon: 180, // Global bounds
